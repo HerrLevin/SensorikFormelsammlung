@@ -15,6 +15,7 @@
 \usepackage{arydshln}
 \usepackage{tikz}
 \usepackage{multirow}
+\usepackage{mathtools}
 \usetikzlibrary{calc,arrows}
 %\usepackage[permil]{overpic} \usepackage{graphicx} \graphicspath{{gfx/}} 
 
@@ -39,7 +40,136 @@
 \begin{document} 
 \setlength{\columnsep}{1cm} 
 \begin{multicols*}{3}
-{\LARGE\bfseries Formelsammlung Robotik }
+
+\subsection*{Farbräume}
+$ R,G,B = [255, 255, 255] \text{\hspace{1.5cm}1 Byte pro Farbe}$
+
+\subsubsection*{RGB in HSI Umrechnung}
+\noindent
+Falls $ R = G = B $, dann $ H $ undefiniert.\\
+Falls $ R = G = B = 0 $, dann $ S $ undefiniert.
+\begin{alignat*}{1}
+	c &= \arccos\left(\dfrac{2R-G-B}{2\sqrt{(R-G)^2+(R-B)(G-B)}}\right)\\
+	H &= \Bigg\{ \begin{matrix*}
+			c & \text{falls } B<G\\
+			360-c & \text{sonst}
+		\end{matrix*}\\
+	S &= 1 - \dfrac{3}{R+G+B}\cdot[\text{min}(R,G,B)]\\
+	I &= \dfrac{1}{3}(R+G+B)\\
+\end{alignat*}
+
+\subsubsection*{RGB24 nach 8bit Graustufen}
+$ g = (R + G + B) / 3 $\\
+oder\\
+$ g = 0.299\cdot R + 0.587\cdot G + 0.114\cdot B $\\
+
+\subsubsection*{Prewitt-Filter}
+$
+p_x = \left[\begin{Array}{ccc}
+	-1 & 0 & 1\\
+	-1 & 0 & 1\\
+	-1 & 0 & 1\\
+\end{Array}\right]
+$
+\hspace{1cm}
+$
+P_x = \dfrac{\delta g(x,y)}{\delta x}
+$
+\hspace{1cm}
+$ M \approx \sqrt{P_x^2 + P_y^2} $
+
+$
+p_y = \left[\begin{Array}{ccc}
+	-1 & -1 & -1\\
+	0 & 0 & 0\\
+	1 & 1 & 1\\
+\end{Array}\right]
+$
+\hspace{1cm}
+$ p_y = \dfrac{\delta g(x,y)}{\delta y} $
+
+
+\subsubsection*{Gauß-/Mittelwert-Filter}
+
+\includegraphics[width=\columnwidth]{Gauss}
+Bei Mittelwert: $ 3\times 3 $ Matrix mit allen Werten $ 1 $. Anschließende Division durch $ 9 $.
+\subsubsection*{Sobel-Filter}
+$
+S_x = \left[\begin{Array}{ccc}
+	-1 & 0 & 1\\
+	-2 & 0 & 2\\
+	-1 & 0 & 1\\
+\end{Array}\right]
+$
+\hspace{1cm}
+$
+S_x = \dfrac{\delta g(x,y)}{\delta x}
+$
+\hspace{1cm}
+$ M \approx \sqrt{S_x^2 + S_y^2} $
+
+$
+S_y = \left[\begin{Array}{ccc}
+	-1 & -2 & -1\\
+	0 & 0 & 0\\
+	1 & 2 & 1\\
+\end{Array}\right]
+$
+\hspace{1cm}
+$ S_y = \dfrac{\delta g(x,y)}{\delta y} $
+\subsubsection*{Roberts-Filter}
+$ R_x=\left(\begin{Array}{cc}
+	-1 & 0\\
+	0 & 1
+\end{Array}\right), R_y=\left(\begin{Array}{cc}
+0 & -1\\
+1 & 0
+\end{Array}\right)$\\
+$R(g(x,y)) = |R_x(g(x,y))|+|R_y(g(x,y))| $
+\subsubsection*{Laplace-Filter}
+$ \nabla^2 \approx \left(\begin{Array}{ccc}
+	0 & 1 & 0\\
+	1 & -4 & 1\\
+	0 & 1 & 0\\
+\end{Array}\right), \nabla^2g(x,y) = \dfrac{\delta^2g(x,y)}{\delta x^2} + \dfrac{\delta^2g(x,y)}{\delta y^2}$
+\subsection*{Projektion}
+Projektion eines Szenepunktes $ P=(X,Y,Z) $ auf Bildpunkt $ p=(u,v,w) $ mit Brennweite $ f $:
+$
+\dfrac{-u}{f} = \dfrac{X}{Z}, \hspace{.1cm} \dfrac{-v}{f} = \dfrac{Y}{Z}, \hspace{.1cm} w = -f 
+$\\
+Rückprojektion: $ X = -\dfrac{uZ}{f}, \hspace{.1cm} Y=-\dfrac{vZ}{f}$\\
+Perspektivprojektion: \\
+$ p= \left(\begin{Array}{c}
+	u \\ v \\ w
+\end{Array}\right) = \left(\begin{Array}{c}
+u \\ v \\ -f
+\end{Array}\right) = -\dfrac{f}{Z}\left(\begin{Array}{c}
+X \\ Y \\ Z
+\end{Array}\right) = -\dfrac{f}{Z}P$
+
+\subsubsection*{Linsensysteme}
+$ \dfrac{1}{Z} + \dfrac{1}{Z'} = \dfrac{1}{f} $\\
+$ \dfrac{1}{Z} + \dfrac{1}{Z'} \approx \dfrac{1}{Z'} \Rightarrow \dfrac{1}{Z'} \approx \dfrac{1}{f}$\\
+\includegraphics[width=\columnwidth]{Linsensysteme}
+
+\subsubsection*{Iterative Endpoint Fit}
+Gegeben: Punkte $ P $, Linien $ L={} $, Distand $ d $\\
+\begin{itemize}
+	\setlength{\itemsep}{1pt}
+	\setlength{\parskip}{0pt}
+	\setlength{\parsep}{0pt}
+	\item Finde $ x_1, x_2 \in P $ mit $ ||x_1-x_2||=max $; verbinde sie durch Linie $ l_0=\{X_1, X_2\}, L = L\cup \{l_0\} $
+	\item Für alle $ l \in L $:
+	\subitem Finde $ x \in P $ mit $ ||l-x||=max $
+	\subitem Wenn $ ||l-x|| < d $:
+	\subsubitem Ordne $ x $ als Mitgliedspunkt $ l $ zu
+	\subsubitem Entferne $ x $ aus $ P $
+	\subitem Sonst:
+	\subsubitem Brich $ l $ in $ l_1 = \{x_y,x\} $ und $ l_2=\{x,x_2\} $ auf
+	\subsubitem Alle Mitgliedspunkte von $ l $ wieder in $ P $\\
+	\subitem $ P $ leer $ \rightarrow $ Abbruch, sonst weiter
+	\item Lösche Linien mit weniger als $ n $ Punkten
+\end{itemize}
 
 \subsection*{Vektoren}
 \renewcommand{\arraystretch}{1}
@@ -119,102 +249,6 @@
 		\cellcolor{yellow!50} c_{21} & c_{22}
 	\end{Array}\right)
 	$\\
-
-\subsection*{Koordinatensysteme}
-\begin{tabularx}{\columnwidth}{l|X|c}
-	Objekt in 3D (OKS) & $\vec{v} = (x,y,z,\alpha,\beta,\gamma)$ & $\alpha,\beta,\gamma = $ Drehwinkel \\ \hline
-	Senkrechte &  \\ 
-	
-\end{tabularx}
-
-
-\includegraphics[width=.25\columnwidth]{axis.png}
-
-\subsection*{Rotationsmatrizen}
-\begin{tabularx}{\columnwidth}{X|m{.71\columnwidth}}
-	Rotation um X & $R_x(\alpha) = \left[\begin{Array}{c} x' \\ y' \\ z' \end{Array}\right]
-	= \left[\begin{Array}{ccc}
-		1 & 0 & 0\\
-		0 & \cos\alpha & -\sin\alpha\\
-		0 & \sin\alpha & \cos\alpha
-	\end{Array}\right]\cdot\left[\begin{Array}{c}
-		x\\
-		y\\
-		z
-	\end{Array}\right]$\\ \hline
-Rotation um Y & $R_y(\alpha) = \left[\begin{Array}{c} x' \\ y' \\ z' \end{Array}\right]
-= \left[\begin{Array}{ccc}
-	\cos\alpha & 0 & \sin\alpha\\
-	0 & 1 & 0 \\
-	-\sin\alpha & 0 & \cos\alpha
-\end{Array}\right]\cdot\left[\begin{Array}{c}
-	x\\
-	y\\
-	z
-\end{Array}\right]$\\ \hline
-Rotation um Z & $R_z(\alpha) = \left[\begin{Array}{c} x' \\ y' \\ z' \end{Array}\right]
-= \left[\begin{Array}{ccc}
-	\cos\alpha & -\sin\alpha & 0\\
-	\sin\alpha & \cos\alpha & 0\\
-	0 & 0 & 1
-\end{Array}\right]\cdot\left[\begin{Array}{c}
-	x\\
-	y\\
-	z
-\end{Array}\right]$\\ \hline
-Vormultipl. (Roll-pitch-yaw) & $ R = (R_n(R_{n-1}\ldots(R_2R_1)\ldots)) $\\ \hline
-Nachmultipl. (Euler-Winkel) & $ R = ((\ldots (R_nR_{n-1})\ldots R_2)R_1) $\\ \hline
-Homogene $4\times4$-Matrix & $\left(\begin{Array}{c|c}
-	R_{3\times3} & u_{3\times1}\\ \hline
-	f_{1\times3} = 0 & 1\times1
-\end{Array}\right) = \left(\begin{Array}{cccc}
-n_{x\downarrow z} & o_{x\downarrow z} & a_{x\downarrow z} & u_{x\downarrow z}\\
-0 & 0& 0 & 1
-\end{Array}\right)$\\ \hline
-Invertierung 4$\times$4 &  $T^{-1} = \left(\begin{Array}{ccc:c}
-	n_{x} & n_{y} & n_{z} & -n^{T}\cdot\vec{u}\\
-	o_{x} & o_{y} & o_{z} & -o^{T}\cdot\vec{u}\\
-	a_{x} & a_{y} & a_{z} & -a^{T}\cdot\vec{u}\\ \cdashline{1-3}
-	0 & 0&0&1
-\end{Array}\right)$\\ \hline
-Translation um $ x,y,z $ & $ \left(\begin{Array}{cccc}
-	1 & 0 & 0 & x\\
-	0 & 1 & 0 & y\\
-	0 & 0 & 1 & z\\
-	0 & 0 & 0 & 1
-\end{Array}\right) $\\ \hline
-Verkettete Lagebeschr.& $ ^{BKS}H_{B}  = ^{BKS}H_{A} \cdot ^{A}H_{B}$ \hfill (H = Homo. Matr.)\\ 
-\end{tabularx}
-
-\subsection*{Quaternionen}
-$$a,b,c,d \in \square \text{Quaternion } q \Rightarrow q = a + b\cdot i + c \cdot * j + d \cdot k $$
-$$a \in \mathbb{R}, u = (b,c,d)^T \in \mathbb{I}$$
-$$q = (a,b,c,d)^T \text{ bzw. } q=(a,u)^T$$
-\begin{alignat*}{3}
-	i^2 &= j^2 &= k^2 &= ijk = -1\\
-	ij &= -ji &= k\\
-	jk &= -kj &= i\\
-	ki &= -ik &= j
-\end{alignat*}
-
-\begin{tabularx}{\columnwidth}{m{.15\columnwidth}|>{\raggedright\arraybackslash}X}
-	Gegeben & $ q = (a_q, u_q), r=(a_r, u_r) $\\ \hline
-	Addition & $ q + r = (a_q + a_r, u_q + u_r) $\\ \hline
-	Skalar & $ q \cdot r = a_qa_r + <u_q, u_r> = a_qa_r + b_qb_r + c_qc_r +d_qd_r $\\ \hline
-	quatern. Multipl. & $  q*r = \newline (a_q+i\cdot b_q + j\cdot c_q + k\cdot d_q)\cdot (a_r + i\cdot b_r + j\cdot c_r + k\cdot d_r) $\\ \hline
-	konjugiert & $ q^{*} = (a_q, -u_r) $\\ \hline
-	Norm & $ |q| = \sqrt{qq^{*}} = \sqrt{q^{*}q} = \sqrt{a^2+b^2+c^2+d^2} $\\ \hline
-	inverses Element & $ q^{-1} = \frac{q^{*}}{|q|^2}$
-\end{tabularx}
-
-\subsubsection*{Rotation mit Quaternionen}
-\begin{tabularx}{\columnwidth}{l|X}
-	Vektor als Quaternion & $ p = (x,y,z)^T \Leftrightarrow q_p = (0, p)^T $\\ \hline
-	Skalar als Quaternion & $ s \Leftrightarrow q_s = (s, 0, 0, 0)^T $\\ \hline
-	Einheitsquaternion & $ |q| = 1 $\\ \hline
-	Rotation um $ \theta $, Achse $ u $ & $ q_r = (\cos(\frac{\theta}{2}), u\cdot\sin(\frac{\theta}{2})) $\\ \hline
-	Rotation Punkt $ p $ & $ q_{p'} = q_rq_pq_r^{*} = q_rq_pq_r^{-1} $
-\end{tabularx}
 
 \subsection*{Sinus}
 \begin{tabularx}{\columnwidth}{r|c|c|c|c|c|c|c|c|}
